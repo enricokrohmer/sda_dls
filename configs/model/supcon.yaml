@@ -1,13 +1,13 @@
-_target_: fccgan.models.model.TwoStepClassifier
+_target_: sda_dls.models.model.TwoStepClassifier
 task_strategy:
-  _target_: fccgan.models.strategies.gan_aided_strategies.SupConDAStrategy
+  _target_: sda_dls.models.strategies.gan_aided_strategies.SupConDAStrategy
   classifier:
-    _target_: fccgan.base.networks.classifiers.ConvNext
+    _target_: sda_dls.base.networks.classifiers.ConvNext
     network: convnext_tiny
     num_classes: 281
     load_imagenet: true
   projection_net:
-      _target_: fccgan.base.networks.misc.ProjectionNet
+      _target_: sda_dls.base.networks.misc.ProjectionNet
       input_nc: 768
       output_nc: 128
       ndf: 1024
@@ -59,9 +59,9 @@ task_strategy:
     - ${paths.log_dir}/to_pt/runs/checkpoints/best.ckpt
     - avg_C
 cgan_strategy:
-  _target_: fccgan.models.strategies.cyclegan_strategies.CycleGanStrategy
+  _target_: sda_dls.models.strategies.cyclegan_strategies.CycleGanStrategy
   generator:
-      _target_: fccgan.base.networks.generators.ResnetGenerator
+      _target_: sda_dls.base.networks.generators.ResnetGenerator
       input_nc: 3
       output_nc: 3
       ngf: 64
@@ -70,37 +70,31 @@ cgan_strategy:
       n_blocks: 9
       padding_type: reflect
   discriminator:
-    _target_: fccgan.base.networks.discriminators.NLayerDiscriminator
+    _target_: sda_dls.base.networks.discriminators.NLayerDiscriminator
     image_shape:
     - 3
     - 256
     - 256
     norm: instance
   criterion_gan:
-    _target_: fccgan.base.torch.losses.GANLoss
+    _target_: sda_dls.base.torch.losses.GANLoss
     gan_mode: lsgan
   lambda_cycle: 10
   lambda_idt: 5
   weight_init: ${model.task_strategy.weight_init}
   queue_size: 50
   criterion_fc:
-    _target_: fccgan.base.torch.losses.FeatureConsistencyLoss
+    _target_: sda_dls.base.torch.losses.FeatureConsistencyLoss
     lambda_fc: 10
     network: ${model.task_strategy.classifier}
     pretrained_path:
       - ${paths.log_dir}/extractor/runs/checkpoints/best.ckpt
       - avg_C
     margin: 0.5
-  pretrained_path_A: 
-    - ${paths.log_dir}/cyclegan_resnet/runs/checkpoints/best.ckpt
-    - "gen_A"
-  pretrained_path_B: 
-    - ${paths.log_dir}/cyclegan_resnet/runs/checkpoints/best.ckpt
-    - "gen_B"
 lr_C: 1e-3
 lr_G: 2e-4
 lr_D: 2e-4
-epochs_gan: 40
+epochs_gan: 60
 wd_C: 0.01
 wd_gan: 0.05
 optimizer:
@@ -110,17 +104,11 @@ optimizer:
   eps: 1e-08
   amsgrad: False
 scheduler_C:
-  _target_: cosine_annealing_warmup.CosineAnnealingWarmupRestarts
+  _target_: torch.optim.lr_scheduler.CosineAnnealingLR
   _partial_: True
-  warmup_steps: 20
-  first_cycle_steps: 80
-  max_lr: ${model.lr_C}
-  min_lr: 1e-6
+  T_max: 60
 scheduler_gan:
   _target_: torch.optim.lr_scheduler.CosineAnnealingLR
   _partial_: true
   T_max: ${model.epochs_gan}
-  eta_min: 1e-6
-  last_epoch: -1
-  verbose: true
 compile: True

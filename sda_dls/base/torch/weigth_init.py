@@ -1,7 +1,7 @@
 # LICENSE
 # This file was extracted from
 #  https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix
-# Please see `fccgan/base/LICENSE` for copyright attribution and LICENSE
+# Please see `sda_dls/base/LICENSE` for copyright attribution and LICENSE
 
 import torch
 from torch.nn import init

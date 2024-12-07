@@ -1,0 +1,62 @@
+_target_: sda_dls.models.model.Classifier
+strategy:
+  _target_: sda_dls.models.strategies.classifier_strategies.DANStrategy
+  classifier:
+    _target_: sda_dls.base.networks.classifiers.ConvNext
+    network: convnext_tiny
+    num_classes: 281
+    load_imagenet: true
+  label_smoothing: 0.1
+  weight_init:
+    _target_: torch.nn.init.normal_
+    _partial_: true
+  stages_to_freeze: 1
+  val_metrics:
+    _target_: torchmetrics.MetricCollection
+    prefix: val_
+    metrics:
+    - _target_: torchmetrics.classification.MulticlassF1Score
+      num_classes: ${model.strategy.classifier.num_classes}
+      average: none
+  test_metrics:
+    _target_: torchmetrics.MetricCollection
+    prefix: test_
+    metrics:
+    - _target_: torchmetrics.classification.MulticlassRecall
+      num_classes: ${model.strategy.classifier.num_classes}
+      average: none
+  nc_src: 21
+  best_metric_key: val_MulticlassF1Score_source
+  maximize_best_metric: true
+  criterion_mmd:
+    _target_: sda_dls.base.torch.losses.mk_MMD
+    kernels:
+    - _target_: sda_dls.base.torch.losses.GaussianKernel
+      alpha: 0.125
+    - _target_: sda_dls.base.torch.losses.GaussianKernel
+      alpha: 0.25
+    - _target_: sda_dls.base.torch.losses.GaussianKernel
+      alpha: 0.5
+    - _target_: sda_dls.base.torch.losses.GaussianKernel
+      alpha: 1.0
+    - _target_: sda_dls.base.torch.losses.GaussianKernel
+      alpha: 2.0
+    - _target_: sda_dls.base.torch.losses.GaussianKernel
+      alpha: 4.0
+    linear: false
+  lambda_mmd: 1
+learning_rate: 2e-4
+optimizer:
+  _target_: torch.optim.AdamW
+  _partial_: true
+  betas:
+  - 0.9
+  - 0.999
+  eps: 1.0e-08
+  weight_decay: 0.1
+  amsgrad: false
+scheduler:
+  _target_: torch.optim.lr_scheduler.CosineAnnealingLR
+  _partial_: true
+  T_max: ${trainer.max_epochs}
+compile: true

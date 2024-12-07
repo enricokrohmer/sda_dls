@@ -8,9 +8,9 @@ from torch._tensor import Tensor
 from torchmetrics import MetricCollection
 from pytorch_metric_learning.losses import GenericPairLoss
 
-from fccgan.base.networks.classifiers import ClassifierNetwork
-from fccgan.base.networks.misc import DiscriminatorDANN
-from fccgan.base.torch.weigth_init import init_weights
+from sda_dls.base.networks.classifiers import ClassifierNetwork
+from sda_dls.base.networks.misc import DiscriminatorDANN
+from sda_dls.base.torch.weigth_init import init_weights
 from .classifier_strategies import AbstractClassifierStrategy
 from .cyclegan_strategies import AbstractCycleGanStrategy
 
@@ -95,7 +95,7 @@ class SupConDAStrategy(TwoStepStrategy):
         nc_src : Optional[int] = None,
         best_metric_key : Optional[str] = None,
         maximize_best_metric: Optional[bool] = True,
-        one_sided: bool = False,
+        one_sided: bool = True,
         avg_momentum: float = 0.0,
         load_backbone_only: bool = False,
     ):
@@ -191,93 +191,6 @@ class SupConDAStrategy(TwoStepStrategy):
 
         return loss
         
-        
-class SourceOnlySupCon(TwoStepStrategy):
-    
-    def __init__(
-        self,
-        classifier: ClassifierNetwork,
-        projection_net: nn.Module,
-        transforms: nn.Module,
-        criterion_contrastive: GenericPairLoss,
-        lambda_contrastive: float,
-        label_smoothing: float,
-        weight_init: callable,
-        val_metrics: MetricCollection,
-        test_metrics: MetricCollection,
-        detach_head: bool = False,
-        pretrained_path: Optional[Tuple[str, str]] = None,
-        stages_to_freeze: int = 0,
-        nc_src : Optional[int] = None,
-        best_metric_key : Optional[str] = None,
-        maximize_best_metric: Optional[bool] = True,
-        avg_momentum: float = 0.0,
-        load_backbone_only: bool = False,
-    ):
-        super().__init__(
-            classifier=classifier,
-            transforms=transforms,
-            label_smoothing=label_smoothing,
-            weight_init=weight_init,
-            val_metrics=val_metrics,
-            test_metrics=test_metrics,
-            pretrained_path=pretrained_path,
-            stages_to_freeze=stages_to_freeze,
-            nc_src=nc_src,
-            best_metric_key=best_metric_key,
-            maximize_best_metric=maximize_best_metric,
-            avg_momentum=avg_momentum,
-            load_backbone_only=load_backbone_only,
-        )
-        self.net_P = projection_net
-        self.contrastive_loss = criterion_contrastive
-        self.lambda_contrastive = lambda_contrastive
-        self.detach_head = detach_head
-    
-    def get_weights(self):
-        return itertools.chain(
-            self.net_C.parameters(),
-            self.net_P.parameters(),
-        )
-
-    def attach_gan(self, gan: AbstractCycleGanStrategy):
-        self.gen_A = gan.avg_A if gan.avg_momentum > 0 else gan.gen_A
-        self.gen_A.eval()
-        self.gen_A.requires_grad_(False)
-        
-    def _forward_train(self, batch):
-        imgs, labels = batch
-        imgs = torch.cat([imgs, self.gen_A(imgs)], dim=0)
-        imgs = self.transforms(imgs)
-        
-        self.labels = torch.cat([labels, labels], dim=0)
-        self.preds, self.features = self.net_C(
-            imgs, get_features=True, 
-            detach_features=self.detach_head
-        )
-        
-    def _eval_contrastive_loss(self):
-        projections = self.net_P(self.features)
-        labels = self.labels
-
-        if self.pl_module.trainer.world_size > 1:
-            projections, labels = self.pl_module.all_gather(
-                [projections, labels],
-                sync_grads=True
-            )
-            projections = torch.flatten(projections, start_dim=0, end_dim=1)
-            labels = torch.flatten(labels, start_dim=0, end_dim=1)
-
-        loss = self.lambda_contrastive * self.contrastive_loss(projections, labels)
-        self.pl_module.log('loss_contrastive', loss, on_step=True, on_epoch=False, sync_dist=True)
-
-        return loss
-
-    def get_loss(self) -> torch.Tensor:
-        loss = self._eval_task_loss()
-        loss += self._eval_contrastive_loss()
-
-        return loss
     
 class CycadaDANN(TwoStepStrategy):
     

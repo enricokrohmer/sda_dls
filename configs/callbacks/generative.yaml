@@ -3,6 +3,6 @@ defaults:
   - _self_
 
 img_logger:
-  _target_: fccgan.callbacks.images.ImageLoggingCallback
-  print_freq: 100
+  _target_: sda_dls.callbacks.images.ImageLoggingCallback
+  print_freq: 1000
   deactivation_epoch: ${model.epochs_gan}

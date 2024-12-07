@@ -4,17 +4,17 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from fccgan.base.torch.layers.residual_block import ResnetBlock
-from fccgan.base.torch.layers.skip_connection_block import UnetSkipConnectionBlock
-from fccgan.base.torch.layers.transformer import ExtendedPixelwiseViT
-from fccgan.base.torch.layers.modnet import ModNet
-from fccgan.base.torch.layers.transformer import PixelwiseViT
-from fccgan.base.torch.layers.unet import UNet
-from fccgan.base.torch.select import get_norm_layer_fn
-from fccgan.base.torch.select import get_activ_layer
-from fccgan.base.torch.weigth_init import init_weights
-from fccgan.base.torch.funcs import module_weights_from_pl_ckpt
-from fccgan.base.torch.layers.transformer import (
+from sda_dls.base.torch.layers.residual_block import ResnetBlock
+from sda_dls.base.torch.layers.skip_connection_block import UnetSkipConnectionBlock
+from sda_dls.base.torch.layers.transformer import ExtendedPixelwiseViT
+from sda_dls.base.torch.layers.modnet import ModNet
+from sda_dls.base.torch.layers.transformer import PixelwiseViT
+from sda_dls.base.torch.layers.unet import UNet
+from sda_dls.base.torch.select import get_norm_layer_fn
+from sda_dls.base.torch.select import get_activ_layer
+from sda_dls.base.torch.weigth_init import init_weights
+from sda_dls.base.torch.funcs import module_weights_from_pl_ckpt
+from sda_dls.base.torch.layers.transformer import (
     calc_tokenized_size,
     ViTInput,
     TransformerEncoder,
@@ -27,7 +27,7 @@ class ResnetGenerator(nn.Module):
     """# LICENSE
         # This code was extracted from
         #  https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix
-        # Please see `fccgan/base/LICENSE` for copyright attribution and LICENSE
+        # Please see `sda_dls/base/LICENSE` for copyright attribution and LICENSE
     """
 
     def __init__(
@@ -126,7 +126,7 @@ class UnetGenerator(nn.Module):
     """# LICENSE
 # This file was extracted from
 #  https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix
-# Please see `fccgan/base/LICENSE` for copyright attribution and LICENSE
+# Please see `sda_dls/base/LICENSE` for copyright attribution and LICENSE
 """
 
     def __init__(
@@ -192,7 +192,7 @@ class ViTGenerator(nn.Module):
     # LICENSE
 # This file was extracted from
 #   https://github.com/LS4GAN/uvcgan2
-# Please see `fccgan/base/LICENSE` for copyright attribution and LICENSE
+# Please see `sda_dls/base/LICENSE` for copyright attribution and LICENSE
     def __init__(
         self,
         features,
@@ -274,7 +274,7 @@ class ViTUNetGenerator(nn.Module):
     # LICENSE
 # This file was extracted from
 #   https://github.com/LS4GAN/uvcgan2
-# Please see `fccgan/base/LICENSE` for copyright attribution and LICENSE
+# Please see `sda_dls/base/LICENSE` for copyright attribution and LICENSE
     def __init__(
         self,
         features,
@@ -336,7 +336,7 @@ class ViTModNetGenerator(nn.Module):
     # LICENSE
 # This file was extracted from
 #   https://github.com/LS4GAN/uvcgan2
-# Please see `fccgan/base/LICENSE` for copyright attribution and LICENSE
+# Please see `sda_dls/base/LICENSE` for copyright attribution and LICENSE
     def __init__(
         self,
         features,

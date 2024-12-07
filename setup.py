@@ -1,3 +1,3 @@
 from setuptools import setup, find_packages
 
-setup(name='fccgan', version='0.1', packages=find_packages())
+setup(name='sda_dls', version='0.1', packages=find_packages())

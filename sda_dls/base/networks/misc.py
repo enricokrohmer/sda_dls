@@ -1,7 +1,7 @@
 import torch.nn as nn
 
-from fccgan.base.torch.gradient_reversal import GradientReversalLayer
-from fccgan.base.torch.select import get_norm_layer_1D
+from sda_dls.base.torch.gradient_reversal import GradientReversalLayer
+from sda_dls.base.torch.select import get_norm_layer_1D
 
 class DiscriminatorDANN(nn.Module):
     

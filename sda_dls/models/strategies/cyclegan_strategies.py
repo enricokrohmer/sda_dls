@@ -7,15 +7,15 @@ import torch
 from torch import nn
 from kornia.enhance import denormalize
 
-from fccgan.base.networks.generators import init_generator
-from fccgan.base.networks.classifiers import init_classifier
-from fccgan.base.torch.losses import GANLoss, PixelConsistencyLoss, FeatureConsistencyLoss
-from fccgan.base.torch.image_pool import ImagePool
-from fccgan.base.torch.gradient_penalty import GradientPenalty
-from fccgan.base.torch.weigth_init import init_weights
-from fccgan.base.torch.funcs import update_average_model
-from fccgan.base.torch.queue import FastQueue
-from fccgan.base.torch.layers.batch_head import BatchHeadWrapper, queued_forward
+from sda_dls.base.networks.generators import init_generator
+from sda_dls.base.networks.classifiers import init_classifier
+from sda_dls.base.torch.losses import GANLoss, PixelConsistencyLoss, FeatureConsistencyLoss
+from sda_dls.base.torch.image_pool import ImagePool
+from sda_dls.base.torch.gradient_penalty import GradientPenalty
+from sda_dls.base.torch.weigth_init import init_weights
+from sda_dls.base.torch.funcs import update_average_model
+from sda_dls.base.torch.queue import FastQueue
+from sda_dls.base.torch.layers.batch_head import BatchHeadWrapper, queued_forward
 
 from .classifier_strategies import Strategy
 
@@ -240,112 +240,7 @@ class CycleGanStrategy(AbstractCycleGanStrategy):
         del(self.pred_a_pool)
         del(self.pred_b_pool)
         
-class Uvcganv2Strategy(AbstractCycleGanStrategy):
 
-    def __init__(
-        self, 
-        generator: nn.Module,
-        discriminator: nn.Module,
-        batch_head: nn.Module,
-        lambda_cycle,
-        lambda_idt,
-        weight_init: callable,
-        criterion_gan: GANLoss,
-        queue_size: int,
-        gradient_penalty: Optional[GradientPenalty] = None,
-        criterion_pixel: Optional[PixelConsistencyLoss] = None,
-        pretrained_path_A: Optional[Tuple[str, str]] = None,
-        pretrained_path_B: Optional[Tuple[str, str]] = None,
-        criterion_fc : Optional[FeatureConsistencyLoss] = None,
-        avg_momentum: float = 0,
-        AtoB: bool = True,
-    ):
-        super().__init__(
-            generator=generator,
-            discriminator=BatchHeadWrapper(discriminator, batch_head),
-            criterion_gan=criterion_gan,
-            lambda_cycle=lambda_cycle,
-            lambda_idt=lambda_idt,
-            weight_init=weight_init,
-            pretrained_path_A=pretrained_path_A,
-            pretrained_path_B=pretrained_path_B,
-            avg_momentum=avg_momentum,
-            criterion_fc=criterion_fc,
-            AtoB=AtoB,
-        )
-
-        self.criterion_pixel = criterion_pixel
-        self.gp = gradient_penalty
-
-        self.queue_size = queue_size
-
-    def _setup_buffers(self):
-        self.queues = {
-            name: FastQueue(self.queue_size, self.pl_module.device) 
-                for name in ("real_A", "real_B", "fake_A", "fake_B")
-        }
-
-    def _bwd_single_disc(self, disc, real, fake, q_real, q_fake):
-        loss_gp = None
-
-        if self.gp is not None:
-            loss_gp = self.gp(
-                disc, fake, real,
-                model_kwargs_fake={"extra_bodies": q_fake.query()},
-                model_kwargs_real={"extra_bodies": q_real.query()}
-            )
-            self.pl_module.manual_backward(loss_gp)
-
-        pred_real = queued_forward(disc, real, q_real, update_queue=True)
-        loss_real = self.criterion_gan(pred_real, True)
-        pred_fake = queued_forward(disc, fake, q_fake, update_queue=True)
-        loss_fake = self.criterion_gan(pred_fake, False)
-        loss = (loss_real + loss_fake) * 0.5
-
-        return loss, loss_gp
-
-    def backward_discriminators(self):
-        loss_discB, loss_gp_B = \
-            self._bwd_single_disc(
-                self.disc_B, self.imgs['real_B'], self.imgs['fake_B'].detach(), 
-                self.queues["real_B"], self.queues["fake_B"]
-            )
-        loss_discA, loss_gp_A = \
-            self._bwd_single_disc(
-                self.disc_A, self.imgs["real_A"], self.imgs["fake_A"].detach(),
-                self.queues["real_A"], self.queues["fake_A"]
-            )
-
-        if loss_gp_A is not None:
-            self.pl_module.log("loss_gp", loss_gp_A + loss_gp_B, on_step=True, on_epoch=False, sync_dist=True)
-
-        self.pl_module.log("loss_discA", loss_discA, on_step=True, on_epoch=False, sync_dist=True)
-        self.pl_module.log("loss_discB", loss_discB, on_step=True, on_epoch=False, sync_dist=True)
-
-        loss = loss_discA + loss_discB
-        self.pl_module.manual_backward(loss)
-
-    def _eval_pixel_loss(self):
-        if self.criterion_pixel is None:
-            return 0.0
-        loss_pixel_A = self.criterion_pixel(self.imgs["fake_A"], self.imgs["real_A"])
-        loss_pixel_B = self.criterion_pixel(self.imgs["fake_B"], self.imgs["real_B"])
-        loss_pixel = loss_pixel_A + loss_pixel_B
-
-        self.pl_module.log("loss_pixel", loss_pixel, on_step=True, on_epoch=False, sync_dist=True)
-        return loss_pixel
-
-    def _accumulate_gan_losses(self):
-        loss = super()._accumulate_gan_losses()
-        loss += self._eval_pixel_loss()
-
-        return loss
-
-    def cleanup(self):
-        super().cleanup()
-        del(self.queues)
-        
-        
 class CyCADAStrategy(CycleGanStrategy):
 
     def __init__(

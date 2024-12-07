@@ -1,12 +1,12 @@
 # LICENSE
 # All classes extracted from
 #  https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix
-# Please see `fccgan/base/LICENSE` for copyright 
+# Please see `sda_dls/base/LICENSE` for copyright 
 
 import functools
 import torch.nn as nn
 
-from fccgan.base.torch.select import get_norm_layer_fn
+from sda_dls.base.torch.select import get_norm_layer_fn
 
 class NLayerDiscriminator(nn.Module):
     """Defines a PatchGAN discriminator"""

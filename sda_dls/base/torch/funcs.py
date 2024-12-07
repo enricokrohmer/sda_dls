@@ -33,6 +33,7 @@ def update_average_model(average_model, model, momentum):
         tmp.mul_(1.0 - momentum)
         avg_param.sub_(tmp)
 
+
 def domain_wise_metrics(metric_dict, nc_source):
         metric_dict_A = {k + '_source': 
             torch.mean(v[0:nc_source]) for k, v in metric_dict.items()}

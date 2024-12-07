@@ -1,6 +1,6 @@
-_target_: fccgan.data.data_loader.BaseDataModule
+_target_: sda_dls.data.data_loader.BaseDataModule
 train_set:
-  _target_: fccgan.data.image_folder.TwoDomainImageFolder
+  _target_: sda_dls.data.image_folder.TwoDomainImageFolder
   root_A: ${paths.data_dir}/source/train
   root_B: ${paths.data_dir}/target_partial_split/train
   labels_path: '${paths.data_dir}/labels.json'
@@ -19,7 +19,7 @@ train_set:
 batch_size_train: 32
 num_workers_train: 4
 val_set:
-  _target_: fccgan.data.image_folder.TwoDomainImageFolder
+  _target_: sda_dls.data.image_folder.TwoDomainImageFolder
   root_A: ${paths.data_dir}/source/val
   root_B: ${paths.data_dir}/target_partial_split/val
   labels_path: '${paths.data_dir}/labels.json'

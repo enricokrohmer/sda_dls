@@ -21,7 +21,7 @@ data:
 
 model:
   strategy:
-    _target_: fccgan.models.strategies.classifier_strategies.ClassifierStrategy
+    _target_: sda_dls.models.strategies.classifier_strategies.ClassifierStrategy
     test_metrics: null
     nc_src: null
     stages_to_freeze: 1

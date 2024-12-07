@@ -12,12 +12,12 @@ import torchmetrics
 from torchmetrics import MetricCollection, MaxMetric, MinMetric
 import torchmetrics.classification
 
-from fccgan.base.torch.losses import ConditionalDomainAdversarialLoss, mk_MMD
-from fccgan.base.networks.classifiers import init_classifier, ClassifierNetwork
-from fccgan.base.networks.misc import DiscriminatorDANN
-from fccgan.base.torch.funcs import domain_wise_metrics, update_average_model
-from fccgan.base.torch.weigth_init import init_weights
-from fccgan.base.networks.generators import init_generator
+from sda_dls.base.torch.losses import ConditionalDomainAdversarialLoss, mk_MMD
+from sda_dls.base.networks.classifiers import init_classifier, ClassifierNetwork
+from sda_dls.base.networks.misc import DiscriminatorDANN
+from sda_dls.base.torch.funcs import domain_wise_metrics, update_average_model
+from sda_dls.base.torch.weigth_init import init_weights
+from sda_dls.base.networks.generators import init_generator
 
 
 class Strategy(ABC):
@@ -196,150 +196,7 @@ class TwoDomainClassifierStrategy(AbstractClassifierStrategy):
             loss += self._eval_logit_loss()
         return loss
     
-class DualHeadClassifierStrategy(Strategy):
     
-    def __init__(
-        self,
-        classifier: ClassifierNetwork,
-        label_smoothing: float,
-        weight_init: callable,
-        nc_src: int,
-        pretrained_path: Optional[Tuple[str, str]] = None,
-        load_backbone_only: bool = False,
-        stages_to_freeze: int = 0,
-    ):
-                   
-        super().__init__()
-        self.net_C = init_classifier(
-            classifier, weight_init, stages_to_freeze, pretrained_path, load_backbone_only
-        )
-        self.criterion_task = nn.CrossEntropyLoss(label_smoothing=label_smoothing)
-        
-        out_feat = self.net_C._get_out_features()
-        self.head_A = torch.nn.Linear(out_feat, nc_src)
-        self.head_B = torch.nn.Linear(out_feat, self.net_C.num_classes - nc_src)
-        
-        self.criterion_task = nn.CrossEntropyLoss(label_smoothing=label_smoothing)
-            
-        self.val_metrics_A = torchmetrics.classification.MulticlassF1Score(num_classes=nc_src)
-        self.val_metrics_B = torchmetrics.classification.MulticlassF1Score(num_classes=self.net_C.num_classes - nc_src)
-        
-        self.nc_src = nc_src
-    
-    def _forward_train(self, batch):
-        imgs_A, imgs_B, labels_A, labels_B = batch
-        
-        _, self.features_A = self.net_C(imgs_A, get_features=True, detach_features=True)
-        _, self.features_B = self.net_C(imgs_B, get_features=True, detach_features=True)
-        self.preds_A = self.head_A(self.features_A)
-        self.preds_B = self.head_B(self.features_B)
-        self.labels_A = labels_A
-        self.labels_B = labels_B - self.nc_src
-    
-    def _update_ema(self):
-        pass
-    
-    def _eval_task_loss(self):
-        task_loss_A = self.criterion_task(self.preds_A, self.labels_A)
-        task_loss_B = self.criterion_task(self.preds_B, self.labels_B)
-        task_loss = task_loss_A + task_loss_B
-        self.pl_module.log('task_loss_A', task_loss_A, on_step=True, on_epoch=False, sync_dist=True)
-        self.pl_module.log('task_loss_B', task_loss_B, on_step=True, on_epoch=False, sync_dist=True)
-        return task_loss
-    
-    def _forward_eval(self, batch):
-        self._forward_train(batch)
-        return self.labels_A, self.preds_A, self.labels_B, self.preds_B
-    
-    def update_metrics(self, outputs, val=None):
-        labels_A, preds_A, labels_B, preds_B = outputs
-        self.val_metrics_A.update(preds_A, labels_A)
-        self.val_metrics_B.update(preds_B, labels_B)
-        
-    def compute_metrics(self, val = None):
-        metrics_A = self.val_metrics_A.compute()
-        metrics_B = self.val_metrics_B.compute()
-        
-        self.pl_module.log('f1_A', metrics_A, on_step=False, on_epoch=True, sync_dist=True)
-        self.pl_module.log('f1_B', metrics_B, on_step=False, on_epoch=True, sync_dist=True)
-        
-        self.val_metrics_A.reset()
-        self.val_metrics_B.reset()
-        
-    def get_loss(self) -> Tensor:
-        task_loss = self._eval_task_loss()
-        return task_loss
-    
-    def get_weights(self):
-        return itertools.chain(
-            self.net_C.parameters(),
-            self.head_A.parameters(),
-            self.head_B.parameters()
-        )
-        
-class DualHeadDannStrategy(DualHeadClassifierStrategy):
-    
-    def __init__(
-        self,
-        classifier: ClassifierNetwork,
-        discriminator: nn.Module,
-        label_smoothing: float,
-        weight_init: callable,
-        nc_src: int,
-        gamma: float = 10,
-        pretrained_path: Optional[Tuple[str, str]] = None,
-        load_backbone_only: bool = False,
-        stages_to_freeze: int = 0,
-    ):
-        super().__init__(
-            classifier=classifier,
-            label_smoothing=label_smoothing,
-            weight_init=weight_init,
-            nc_src=nc_src,
-            pretrained_path=pretrained_path,
-            load_backbone_only=load_backbone_only,
-            stages_to_freeze=stages_to_freeze,
-        )
-        
-        self.disc = discriminator
-        init_weights(self.disc, weight_init)
-        self.criterion_disc = nn.BCEWithLogitsLoss()
-        self.gamma = torch.tensor(gamma)
-        
-    def _get_lambda(self):
-        max_steps = self.pl_module.trainer.estimated_stepping_batches
-        current_step = self.pl_module.trainer.global_step
-
-        p = torch.tensor(current_step / max_steps)
-        return 2 / (1 + torch.exp(- self.gamma * p)) - 1
-        
-    def _forward_train(self, batch):
-        super()._forward_train(batch)
-        lambda_p = self._get_lambda()
-        self.disc_A = self.disc(self.features_A, lambda_p)
-        self.disc_B = self.disc(self.features_B, lambda_p)
-        self.disc_preds = torch.cat((self.disc_A, self.disc_B), dim=0)
-        self.domain = torch.cat((torch.zeros_like(self.disc_A), torch.ones_like(self.disc_B)), dim=0)
-        
-    def _eval_disc_loss(self):
-        disc_loss = self.criterion_disc(self.disc_preds, self.domain)
-        self.pl_module.log('disc_loss', disc_loss, on_step=True, on_epoch=False, sync_dist=True)
-        return disc_loss
-    
-    def get_loss(self) -> Tensor:
-        task_loss = self._eval_task_loss()
-        disc_loss = self._eval_disc_loss()
-        loss = task_loss + disc_loss
-        return loss
-    
-    def get_weights(self):
-        return itertools.chain(
-            self.net_C.parameters(),
-            self.head_A.parameters(),
-            self.head_B.parameters(),
-            self.disc.parameters()
-        )
-        
 class DANNStrategy(AbstractClassifierStrategy):
     
     def __init__(
@@ -414,85 +271,7 @@ class DANNStrategy(AbstractClassifierStrategy):
             self.net_C.parameters(),
             self.disc.parameters()
         )
-    
-class CDANStrategy(AbstractClassifierStrategy):
-    
-    def __init__(
-        self,
-        classifier: ClassifierNetwork,
-        discriminator: DiscriminatorDANN,
-        cdan_loss: ConditionalDomainAdversarialLoss,    
-        label_smoothing: float,
-        weight_init: callable,
-        val_metrics: MetricCollection,
-        test_metrics: MetricCollection,
-        gamma: float = 10,
-        pretrained_path: Optional[Tuple[str, str]] = None,
-        stages_to_freeze: int = 0,
-        nc_src : Optional[int] = None,
-        best_metric_key : Optional[str] = None,
-        maximize_best_metric: Optional[bool] = True,
-        avg_momentum : float = 0,
-        load_backbone_only: bool = False,
-    ):
-        super().__init__(
-            classifier=classifier,
-            label_smoothing=label_smoothing,
-            weight_init=weight_init,
-            val_metrics=val_metrics,
-            test_metrics=test_metrics,
-            pretrained_path=pretrained_path,
-            stages_to_freeze=stages_to_freeze,
-            load_backbone_only=load_backbone_only,
-            nc_src=nc_src,
-            best_metric_key=best_metric_key,
-            maximize_best_metric=maximize_best_metric,
-            avg_momentum=avg_momentum,
-        )
         
-        self.disc = discriminator
-        init_weights(self.disc, weight_init)
-        
-        self.criterion_disc = cdan_loss
-        self.gamma = torch.tensor(gamma)
-        
-    def _get_lambda(self):
-        max_steps = self.pl_module.trainer.estimated_stepping_batches
-        current_step = self.pl_module.trainer.global_step
-
-        p = torch.tensor(current_step / max_steps)
-        return (1 - torch.exp(- self.gamma * p)) / (1 + torch.exp(- self.gamma * p))
-    
-    def _forward_train(self, batch):
-        imgs_A, imgs_B, labels_A, labels_B = batch
-        self.preds_A, self.features_A = self.net_C(imgs_A, get_features=True)
-        self.preds_B, self.features_B = self.net_C(imgs_B, get_features=True)
-        self.preds = torch.cat((self.preds_A, self.preds_B), dim=0)
-        self.labels = torch.cat((labels_A, labels_B), dim=0)
-        self.features = torch.cat((self.features_A, self.features_B), dim=0)
-                
-    def _eval_disc_loss(self):
-        lambda_p = self._get_lambda()
-        disc_loss = self.criterion_disc(
-            self.disc, lambda_p, 
-            self.preds_A, self.features_A,
-            self.preds_B, self.features_B
-        )
-        
-        self.pl_module.log('disc_loss', disc_loss, on_step=True, on_epoch=False, sync_dist=True)
-        return disc_loss
-        
-    def get_loss(self) -> Tensor:
-        task_loss = self._eval_task_loss()
-        disc_loss = self._eval_disc_loss()
-        loss = task_loss + disc_loss
-        return loss
-        
-    def get_weights(self):
-        return itertools.chain(
-            self.net_C.parameters(),
-            self.disc.parameters()
-        )
 
 class DANStrategy(AbstractClassifierStrategy):
     

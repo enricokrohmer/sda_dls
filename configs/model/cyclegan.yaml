@@ -1,0 +1,98 @@
+_target_: sda_dls.models.model.TwoStepClassifier
+task_strategy:
+  _target_: sda_dls.models.strategies.gan_aided_strategies.GanAidedClassifierStrategy
+  classifier:
+    _target_: sda_dls.base.networks.classifiers.ConvNext
+    network: convnext_tiny
+    num_classes: 281
+    load_imagenet: true
+  transforms:
+    _target_: kornia.augmentation.container.AugmentationSequential
+    _args_:
+    - _target_: kornia.enhance.Denormalize
+      mean: 0.5
+      std: 0.5
+    - _target_: kornia.augmentation.RandomCrop
+      size:
+      - 224
+      - 224
+    - _target_: kornia.augmentation.auto.RandAugment
+      n: 2
+      m: 14
+    - _target_: kornia.enhance.Normalize
+      mean: 0.5
+      std: 0.5
+    same_on_batch: false
+  label_smoothing: 0.1
+  weight_init:
+    _target_: torch.nn.init.normal_
+    _partial_: true
+    mean: 0.0
+    std: 0.02
+  stages_to_freeze: 1
+  val_metrics:
+    _target_: torchmetrics.MetricCollection
+    prefix: val_
+    metrics:
+    - _target_: torchmetrics.classification.MulticlassF1Score
+      num_classes: ${model.task_strategy.classifier.num_classes}
+      average: none
+  test_metrics:
+    _target_: torchmetrics.MetricCollection
+    prefix: test_
+    metrics:
+    - _target_: torchmetrics.classification.MulticlassF1Score
+      num_classes: ${model.task_strategy.classifier.num_classes}
+      average: none
+  nc_src: 21
+  best_metric_key: val_MulticlassF1Score_source
+  maximize_best_metric: true
+cgan_strategy:
+  _target_: sda_dls.models.strategies.cyclegan_strategies.CycleGanStrategy
+  generator:
+    _target_: sda_dls.base.networks.generators.ResnetGenerator
+    input_nc: 3
+    output_nc: 3
+    ngf: 64
+    use_dropout: true
+    norm: instance
+    n_blocks: 9
+    padding_type: reflect
+  discriminator:
+    _target_: sda_dls.base.networks.discriminators.NLayerDiscriminator
+    image_shape:
+    - 3
+    - 256
+    - 256
+    norm: instance
+  criterion_gan:
+    _target_: sda_dls.base.torch.losses.GANLoss
+    gan_mode: lsgan
+  lambda_cycle: 10
+  lambda_idt: 0
+  weight_init: ${model.task_strategy.weight_init}
+  queue_size: 50
+  AtoB: true
+lr_C: 0.0002
+lr_G: 0.0002
+lr_D: 0.0002
+wd_C: 0.1
+wd_gan: 0.05
+epochs_gan: 60
+optimizer:
+  _target_: torch.optim.AdamW
+  _partial_: true
+  betas:
+  - 0.9
+  - 0.999
+  eps: 1.0e-08
+  amsgrad: false
+scheduler_C:
+  _target_: torch.optim.lr_scheduler.CosineAnnealingLR
+  _partial_: true
+  T_max: 60
+scheduler_gan:
+  _target_: torch.optim.lr_scheduler.CosineAnnealingLR
+  _partial_: true
+  T_max: ${model.epochs_gan}
+compile: true

@@ -13,8 +13,8 @@ from torchvision.models.convnext import (
     ConvNeXt_Large_Weights
 )
 
-from fccgan.base.torch.weigth_init import init_weights
-from fccgan.base.torch.funcs import module_weights_from_pl_ckpt
+from sda_dls.base.torch.weigth_init import init_weights
+from sda_dls.base.torch.funcs import module_weights_from_pl_ckpt
 
 
 class ClassifierNetwork(torch.nn.Module):

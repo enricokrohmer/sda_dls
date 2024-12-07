@@ -4,10 +4,10 @@
 root_dir: "."
 
 # path to data directory
-data_dir: ${paths.root_dir}/datasets/ssb2ccsv/
+data_dir: ${paths.root_dir}/datasets/
 
 # path to logging directory
-log_dir: ${paths.root_dir}/logs/ssb2ccsv/
+log_dir: ${paths.root_dir}/logs/
 
 # path to output directory, created dynamically by hydra
 # path generation pattern is specified in `configs/hydra/default.yaml`

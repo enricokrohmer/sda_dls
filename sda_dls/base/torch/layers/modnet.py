@@ -4,7 +4,7 @@
 import torch
 from torch import nn
 
-from fccgan.base.torch.select import get_activ_layer
+from sda_dls.base.torch.select import get_activ_layer
 from .cnn  import get_upsample_x2_layer
 from .unet import UNetEncBlock
 

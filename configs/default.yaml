@@ -7,7 +7,6 @@ defaults:
   - paths: default.yaml
   - extras: default.yaml
   - hydra: default.yaml
-  - hparams_search: null
   - _self_
 
 experiment_name: ???

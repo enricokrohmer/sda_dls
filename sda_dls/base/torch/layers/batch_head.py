@@ -1,8 +1,8 @@
 import torch
 from torch import nn
-from fccgan.base.torch.queue import FastQueue
+from sda_dls.base.torch.queue import FastQueue
 
-from fccgan.base.torch.select import get_activ_layer, extract_name_kwargs
+from sda_dls.base.torch.select import get_activ_layer, extract_name_kwargs
 
 # References:
 # arXiv: 1912.0495

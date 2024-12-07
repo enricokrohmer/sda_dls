@@ -1,7 +1,7 @@
 data:
-  _target_: fccgan.data.data_loader.BaseDataModule
+  _target_: sda_dls.data.data_loader.BaseDataModule
   train_set:
-    _target_: fccgan.data.image_folder.SingleDomainImageFolder
+    _target_: sda_dls.data.image_folder.SingleDomainImageFolder
     root: ${paths.data_dir}/target_full/train
     labels_path: ${paths.data_dir}/labels.json
     transform_list:
@@ -29,7 +29,7 @@ data:
   batch_size_train: 32
   num_workers_train: 4
   val_set:
-    _target_: fccgan.data.image_folder.SingleDomainImageFolder
+    _target_: sda_dls.data.image_folder.SingleDomainImageFolder
     root: ${paths.data_dir}/target_full/val
     labels_path: ${paths.data_dir}/labels.json
     transform_list:
@@ -50,7 +50,7 @@ data:
   batch_size_val: 128
   num_workers_val: 4
   test_set:
-    _target_: fccgan.data.image_folder.SingleDomainImageFolder
+    _target_: sda_dls.data.image_folder.SingleDomainImageFolder
     root: ${paths.data_dir}/target_full/test
     labels_path: ${paths.data_dir}/labels.json
     transform_list:
@@ -71,11 +71,11 @@ data:
   batch_size_test: 128
   num_workers_test: 4
 model:
-  _target_: fccgan.models.model.Classifier
+  _target_: sda_dls.models.model.Classifier
   strategy:
-    _target_: fccgan.models.strategies.classifier_strategies.ClassifierStrategy
+    _target_: sda_dls.models.strategies.classifier_strategies.ClassifierStrategy
     classifier:
-      _target_: fccgan.base.networks.classifiers.ConvNext
+      _target_: sda_dls.base.networks.classifiers.ConvNext
       network: convnext_tiny
       num_classes: 156
       load_imagenet: true
@@ -158,7 +158,7 @@ logger:
     offline: false
     id: null
     anonymous: null
-    project: FCCGAN
+    project: sda_dls
     log_model: false
     prefix: ''
     group: ''

@@ -6,12 +6,12 @@ from torch import nn
 from torchvision import transforms
 import openloss
 
-from fccgan.base.networks.classifiers import ClassifierNetwork, init_classifier
+from sda_dls.base.networks.classifiers import ClassifierNetwork, init_classifier
 
 class GANLoss(nn.Module):
     """ This class was extracted from
         https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix
-        Please see `fccgan/base/LICENSE` for copyright attribution and LICENSE
+        Please see `sda_dls/base/LICENSE` for copyright attribution and LICENSE
     """
 
     def __init__(
@@ -94,27 +94,6 @@ class GANLoss(nn.Module):
 
         target_tensor = self.get_target_tensor(prediction, target_is_real)
         return self.loss(prediction, target_tensor)
-
-
-class PixelConsistencyLoss(nn.Module):
-    
-    def __init__(
-        self,
-        size: int,
-        lambda_con: float,
-        reduction: str = 'mean',
-    ):
-        super().__init__()
-        self.model = transforms.Resize(size, antialias=True)
-        self.loss = nn.L1Loss(reduction=reduction)
-        self.lambda_con = lambda_con
-        
-    def forward(self, x, y):
-        x = self.model(x)
-        y = self.model(y)
-        loss = self.loss(x, y)
-        
-        return self.lambda_con * loss
     
     
 class FeatureConsistencyLoss(nn.Module):
@@ -153,121 +132,11 @@ class FeatureConsistencyLoss(nn.Module):
         
         return loss
     
-class EOSLoss(nn.Module):
-    
-    def __init__(
-        self,
-        num_classes: int,
-        reduction: str = 'mean',
-    ):
-        super().__init__()
-        self.num_classes = num_classes
-        self.reduction = reduction
-        
-        self.multiplier = 1.0 / num_classes
-        self.ones = None
-        
-    def forward(self, logits: torch.Tensor):
-        if self.ones is None:
-            self.ones = torch.ones(self.num_classes, device=logits.device)
-            self.ones = self.ones * self.multiplier
-            
-        nll_values = (-1) * F.log_softmax(logits, dim=1)
-        loss = nll_values * self.ones
-        
-        loss = torch.sum(loss, dim=1)
-        
-        if self.reduction == 'mean': return loss.mean()
-        elif self.reduction == 'sum': return loss.sum()
-        else: return loss
-        
-        
-        
-        
-        
+
 # LICENSE
 # The remaining code was extracted from
 #  https://github.com/thuml/Transfer-Learning-Library
-# Please see `fccgan/base/LICENSE` for copyright attribution and LICENSE
-
-class RandomizedMultiLinearMap(nn.Module):
-
-    def __init__(self, features_dim: int, num_classes: int, output_dim: Optional[int] = 1024):
-        super(RandomizedMultiLinearMap, self).__init__()
-        self.Rf = torch.randn(features_dim, output_dim)
-        self.Rg = torch.randn(num_classes, output_dim)
-        self.output_dim = output_dim
-
-    def forward(self, f: torch.Tensor, g: torch.Tensor) -> torch.Tensor:
-        f = torch.mm(f, self.Rf.to(f.device))
-        g = torch.mm(g, self.Rg.to(g.device))
-        output = torch.mul(f, g) / np.sqrt(float(self.output_dim))
-        return output
-
-
-class MultiLinearMap(nn.Module):
-    
-    def __init__(self):
-        super(MultiLinearMap, self).__init__()
-
-    def forward(self, f: torch.Tensor, g: torch.Tensor) -> torch.Tensor:
-        batch_size = f.size(0)
-        output = torch.bmm(g.unsqueeze(2), f.unsqueeze(1))
-        return output.view(batch_size, -1)
-
-
-class ConditionalDomainAdversarialLoss(nn.Module):
-
-    def __init__(self, entropy_conditioning: Optional[bool] = False,
-                 randomized: Optional[bool] = False, num_classes: Optional[int] = -1,
-                 features_dim: Optional[int] = -1, randomized_dim: Optional[int] = 1024,
-                 reduction: Optional[str] = 'mean', sigmoid=True):
-        super(ConditionalDomainAdversarialLoss, self).__init__()
-        self.entropy_conditioning = entropy_conditioning
-        self.sigmoid = sigmoid
-        self.reduction = reduction
-
-        if randomized:
-            assert num_classes > 0 and features_dim > 0 and randomized_dim > 0
-            self.map = RandomizedMultiLinearMap(features_dim, num_classes, randomized_dim)
-        else:
-            self.map = MultiLinearMap()
-        self.bce = lambda input, target, weight: F.binary_cross_entropy(input, target, weight,
-                                                                        reduction=reduction) if self.entropy_conditioning \
-            else F.binary_cross_entropy(input, target, reduction=reduction)
-
-    def forward(self, disc: nn.Module, lambda_: torch.Tensor, g_s: torch.Tensor, f_s: torch.Tensor, g_t: torch.Tensor, f_t: torch.Tensor) -> torch.Tensor:
-        f = torch.cat((f_s, f_t), dim=0)
-        g = torch.cat((g_s, g_t), dim=0)
-        g = F.softmax(g, dim=1).detach()
-        h = self.map(f, g)
-        d = disc(h, lambda_)
-
-        entropy_g = torch.sum(-g * torch.log(g + 1e-6), dim=1) # Calc entropy of g
-        weight = 1.0 + torch.exp(-entropy_g)
-        
-        batch_size = f.size(0)
-        weight = weight / torch.sum(weight) * batch_size
-
-        if self.sigmoid:
-            d_label = torch.cat((
-                torch.ones((g_s.size(0), 1)).to(g_s.device),
-                torch.zeros((g_t.size(0), 1)).to(g_t.device),
-            ))
-            if self.entropy_conditioning:
-                return F.binary_cross_entropy(d, d_label, weight.view_as(d), reduction=self.reduction)
-            else:
-                return F.binary_cross_entropy(d, d_label, reduction=self.reduction)
-        else:
-            d_label = torch.cat((
-                torch.ones((g_s.size(0), )).to(g_s.device),
-                torch.zeros((g_t.size(0), )).to(g_t.device),
-            )).long()
-            if self.entropy_conditioning:
-                raise NotImplementedError("entropy_conditioning")
-            return F.cross_entropy(d, d_label, reduction=self.reduction)
-        
-
+# Please see `sda_dls/base/LICENSE` for copyright attribution and LICENSE
 class GaussianKernel(nn.Module):
 
     def __init__(self, sigma: Optional[float] = None, track_running_stats: Optional[bool] = True,

@@ -1,7 +1,7 @@
 # LICENSE
 # This file was extracted from
 #   https://github.com/fungtion/DANN
-# Please see `fccgan/base/LICENSE` for copyright attribution and LICENSE
+# Please see `sda_dls/base/LICENSE` for copyright attribution and LICENSE
 
 from torch.autograd import Function
 

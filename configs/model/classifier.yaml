@@ -1,8 +1,8 @@
-_target_: fccgan.models.model.Classifier
+_target_: sda_dls.models.model.Classifier
 strategy:
-  _target_: fccgan.models.strategies.classifier_strategies.TwoDomainClassifierStrategy
+  _target_: sda_dls.models.strategies.classifier_strategies.TwoDomainClassifierStrategy
   classifier:
-    _target_: fccgan.base.networks.classifiers.ConvNext
+    _target_: sda_dls.base.networks.classifiers.ConvNext
     network: 'convnext_tiny'
     num_classes: 281
     load_imagenet: True
@@ -35,10 +35,7 @@ optimizer:
   weight_decay: 0.01
   amsgrad: False
 scheduler:
-  _target_: cosine_annealing_warmup.CosineAnnealingWarmupRestarts
+  _target_: torch.optim.lr_scheduler.CosineAnnealingLR
   _partial_: True
-  warmup_steps: 10
-  first_cycle_steps: 50
-  max_lr: ${model.optimizer.lr}
-  min_lr: 1e-6
+  T_max: ${trainer.max_epochs}
 compile: True
