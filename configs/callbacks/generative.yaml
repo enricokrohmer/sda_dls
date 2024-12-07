@@ -1,0 +1,8 @@
+defaults:
+  - default
+  - _self_
+
+img_logger:
+  _target_: fccgan.callbacks.images.ImageLoggingCallback
+  print_freq: 100
+  deactivation_epoch: ${model.epochs_gan}

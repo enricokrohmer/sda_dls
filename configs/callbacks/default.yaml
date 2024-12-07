@@ -1,0 +1,16 @@
+defaults:
+  - model_checkpoint.yaml
+  - model_summary.yaml
+  - rich_progress_bar.yaml
+  - _self_
+
+model_checkpoint:
+  dirpath: '${paths.output_dir}/checkpoints'
+  filename: '{epoch}-{val_MulticlassF1Score_source: .3f}'
+  monitor: 'val_MulticlassF1Score_source'
+  mode: 'max'
+  verbose: False
+  every_n_epochs: ${trainer.check_val_every_n_epoch}
+
+model_summary:
+  max_depth: 1

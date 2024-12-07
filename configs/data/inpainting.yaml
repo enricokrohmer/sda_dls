@@ -1,0 +1,40 @@
+_target_: fccgan.data.data_loader.BaseDataModule
+train_set:
+  _target_: fccgan.data.image_folder.TwoDomainImageFolder
+  root_A: '${paths.data_dir}/source/train'
+  root_B: '${paths.data_dir}/target_partial_split/train'
+  transform_list:
+    - _target_: torchvision.transforms.ToTensor
+    - _target_: torchvision.transforms.v2.RandomResizedCrop
+      size: 256
+      scale: [0.7, 1.0]
+      antialias: true
+    - _target_: torchvision.transforms.v2.RandomRotation
+      degrees: 10
+    - _target_: torchvision.transforms.v2.RandomHorizontalFlip
+    - _target_: torchvision.transforms.v2.ColorJitter
+      brightness: 0.2
+      hue: 0.2
+      contrast: 0.2
+      saturation: 0.2
+    - _target_: torchvision.transforms.v2.Normalize
+      mean: [0.5, 0.5, 0.5]
+      std: [0.5, 0.5, 0.5]
+batch_size_train: 64
+num_workers_train: 4
+val_set:
+  _target_: fccgan.data.image_folder.TwoDomainImageFolder
+  root_A: '${paths.data_dir}/source/val'
+  root_B: '${paths.data_dir}/target_partial_split/val'
+  transform_list:
+    - _target_: torchvision.transforms.ToTensor
+    - _target_: torchvision.transforms.v2.Resize
+      size: 256
+      antialias: true
+    - _target_: torchvision.transforms.v2.CenterCrop
+      size: 256
+    - _target_: torchvision.transforms.v2.Normalize
+      mean: [0.5, 0.5, 0.5]
+      std: [0.5, 0.5, 0.5] 
+batch_size_val: 64
+num_workers_val: 4

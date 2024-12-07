@@ -1,0 +1,40 @@
+defaults:
+  - data: disjoint_labels.yaml
+  - model: classifier.yaml
+  - trainer: default.yaml
+  - callbacks: default.yaml
+  - logger: wandb.yaml
+  - paths: default.yaml
+  - extras: default.yaml
+  - hydra: default.yaml
+  - hparams_search: null
+  - _self_
+
+experiment_name: ???
+train: True
+
+data:
+  train_set:
+    _target_: fccgan.data.image_folder.TwoDomainImageFolder
+  batch_size_train: 64
+
+model:
+  strategy:
+    _target_: fccgan.models.strategies.classifier_strategies.ClassifierStrategy
+    val_metrics:
+      _target_: torchmetrics.MetricCollection
+      prefix: 'val_'
+      metrics:
+        - _target_: torchmetrics.classification.MulticlassF1Score
+          num_classes: ${model.strategy.classifier.num_classes}
+          average: 'none'
+        - _target_: torchmetrics.classification.MulticlassPrecision
+          num_classes: ${model.strategy.classifier.num_classes}
+          average: 'none'
+        - _target_: torchmetrics.classification.MulticlassRecall
+          num_classes: ${model.strategy.classifier.num_classes}
+          average: 'none'
+
+callbacks:
+  model_checkpoint:
+    save_top_k: -1

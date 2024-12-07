@@ -1,0 +1,11 @@
+defaults:
+  - default
+  - _self_
+
+model_checkpoint:
+  dirpath: '${paths.output_dir}/checkpoints'
+  filename: '{epoch}-{f1_A: .3f}'
+  monitor: 'f1_A'
+  mode: 'max'
+  verbose: False
+  every_n_epochs: ${trainer.check_val_every_n_epoch}

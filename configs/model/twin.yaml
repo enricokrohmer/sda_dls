@@ -1,0 +1,30 @@
+defaults:
+  - classifier
+  - _self_
+
+strategy:
+  _target_: fccgan.models.strategies.two_head_strategies.TwinClassifierStrategy
+  classifier:
+    num_classes: 21
+  classifier_B:
+    _target_: fccgan.base.networks.classifiers.ConvNext
+    network: 'convnext_tiny'
+    num_classes: 260
+    load_imagenet: True
+  thresh: 3.0
+  stages_to_freeze: 2
+  stages_to_freeze_B: 1
+  val_metrics:
+    _target_: torchmetrics.MetricCollection
+    prefix: 'val_'
+    metrics:
+      - _target_: torchmetrics.classification.MulticlassF1Score
+        num_classes: 281
+        average: 'none'
+  test_metrics:
+    _target_: torchmetrics.MetricCollection
+    prefix: 'test_'
+    metrics:
+      - _target_: torchmetrics.classification.MulticlassF1Score
+        num_classes: 281
+        average: 'none'

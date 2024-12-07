@@ -1,0 +1,14 @@
+defaults:
+  - data: disjoint_labels.yaml
+  - model: classifier.yaml
+  - trainer: default.yaml
+  - callbacks: default.yaml
+  - logger: wandb.yaml
+  - paths: default.yaml
+  - extras: default.yaml
+  - hydra: default.yaml
+  - hparams_search: null
+  - _self_
+
+experiment_name: ???
+train: True

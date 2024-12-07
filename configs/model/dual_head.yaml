@@ -1,0 +1,45 @@
+_target_: fccgan.models.model.Classifier
+strategy:
+  _target_: fccgan.models.strategies.two_head_strategies.DualHeadStrategy
+  classifier:
+    _target_: fccgan.base.networks.classifiers.ConvNext
+    network: 'convnext_tiny'
+    num_classes: 281
+    load_imagenet: True
+  label_smoothing: 0.1
+  weight_init:
+    _target_: torch.nn.init.normal_
+    _partial_: true
+  stages_to_freeze: 2
+  nc_src: 21
+  thresh: ???
+  val_metrics:
+    _target_: torchmetrics.MetricCollection
+    prefix: 'val_'
+    metrics:
+      - _target_: torchmetrics.classification.MulticlassF1Score
+        num_classes: ${model.strategy.classifier.num_classes}
+        average: 'none'
+  test_metrics:
+    _target_: torchmetrics.MetricCollection
+    prefix: 'test_'
+    metrics:
+      - _target_: torchmetrics.classification.MulticlassF1Score
+        num_classes: ${model.strategy.classifier.num_classes}
+        average: 'none'
+optimizer:
+  _target_: torch.optim.AdamW
+  _partial_: true
+  lr: 1e-3
+  betas: [0.9, 0.999]
+  eps: 1e-08
+  weight_decay: 0.01
+  amsgrad: False
+scheduler:
+  _target_: cosine_annealing_warmup.CosineAnnealingWarmupRestarts
+  _partial_: True
+  warmup_steps: 5
+  first_cycle_steps: 55
+  max_lr: ${model.optimizer.lr}
+  min_lr: 1e-6
+compile: True

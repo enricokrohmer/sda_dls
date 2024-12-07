@@ -1,0 +1,37 @@
+defaults:
+  - data: target_full.yaml
+  - model: classifier.yaml
+  - trainer: default.yaml
+  - callbacks: default.yaml
+  - logger: wandb.yaml
+  - paths: default.yaml
+  - extras: default.yaml
+  - hydra: default.yaml
+  - _self_
+
+experiment_name: ???
+train: True
+
+data:
+  train_set:
+    root: ${paths.data_dir}/target_partial_split/train
+  val_set:
+    root: ${paths.data_dir}/target_partial_split/val
+  test_set: null
+
+model:
+  strategy:
+    _target_: fccgan.models.strategies.classifier_strategies.ClassifierStrategy
+    test_metrics: null
+    nc_src: null
+    stages_to_freeze: 1
+    val_metrics:
+      metrics:
+        - _target_: torchmetrics.classification.MulticlassF1Score
+          num_classes: ${model.strategy.classifier.num_classes}
+
+callbacks:
+  model_checkpoint:
+    filename: '{epoch}-{val_MulticlassF1Score: .3f}'
+    monitor: 'val_MulticlassF1Score'
+ 

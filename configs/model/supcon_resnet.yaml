@@ -1,0 +1,126 @@
+_target_: fccgan.models.model.TwoStepClassifier
+task_strategy:
+  _target_: fccgan.models.strategies.gan_aided_strategies.SupConDAStrategy
+  classifier:
+    _target_: fccgan.base.networks.classifiers.ConvNext
+    network: convnext_tiny
+    num_classes: 281
+    load_imagenet: true
+  projection_net:
+      _target_: fccgan.base.networks.misc.ProjectionNet
+      input_nc: 768
+      output_nc: 128
+      ndf: 1024
+      n_layers: 0
+      normalize_output: true
+      norm: null
+  transforms:
+    _target_: torchvision.transforms.v2.Compose
+    transforms:
+      - _target_: torchvision.transforms.v2.Normalize
+        mean: [-1, -1, -1]
+        std: [2, 2, 2]
+      - _target_: torchvision.transforms.v2.Resize
+        size: 224
+      - _target_: torchvision.transforms.v2.RandomHorizontalFlip
+      - _target_: torchvision.transforms.v2.RandAugment
+      - _target_: torchvision.transforms.v2.RandomErasing
+      - _target_: torchvision.transforms.v2.Normalize
+        mean: [0.5, 0.5, 0.5]
+        std: [0.5, 0.5, 0.5]
+  criterion_contrastive:
+    _target_: pytorch_metric_learning.losses.SupConLoss
+  lambda_contrastive: 0.5
+  label_smoothing: 0.1
+  weight_init:
+    _target_: torch.nn.init.normal_
+    _partial_: true
+    mean: 0.0
+    std: 0.02
+  stages_to_freeze: 2
+  val_metrics:
+    _target_: torchmetrics.MetricCollection
+    prefix: 'val_'
+    metrics:
+      - _target_: torchmetrics.classification.MulticlassF1Score
+        num_classes: ${model.task_strategy.classifier.num_classes}
+        average: 'none'
+  test_metrics:
+    _target_: torchmetrics.MetricCollection
+    prefix: 'test_'
+    metrics:
+      - _target_: torchmetrics.classification.MulticlassF1Score
+        num_classes: ${model.task_strategy.classifier.num_classes}
+        average: 'none'
+  nc_src: 21
+  avg_momentum: 0.9999
+  one_sided: True
+  pretrained_path:
+    - ${paths.log_dir}/to_pt/runs/checkpoints/best.ckpt
+    - avg_C
+cgan_strategy:
+  _target_: fccgan.models.strategies.cyclegan_strategies.CycleGanStrategy
+  generator:
+      _target_: fccgan.base.networks.generators.ResnetGenerator
+      input_nc: 3
+      output_nc: 3
+      ngf: 64
+      use_dropout: true
+      norm: instance
+      n_blocks: 9
+      padding_type: reflect
+  discriminator:
+    _target_: fccgan.base.networks.discriminators.NLayerDiscriminator
+    image_shape:
+    - 3
+    - 256
+    - 256
+    norm: instance
+  criterion_gan:
+    _target_: fccgan.base.torch.losses.GANLoss
+    gan_mode: lsgan
+  lambda_cycle: 10
+  lambda_idt: 5
+  weight_init: ${model.task_strategy.weight_init}
+  queue_size: 50
+  criterion_fc:
+    _target_: fccgan.base.torch.losses.FeatureConsistencyLoss
+    lambda_fc: 10
+    network: ${model.task_strategy.classifier}
+    pretrained_path:
+      - ${paths.log_dir}/extractor/runs/checkpoints/best.ckpt
+      - avg_C
+    margin: 0.5
+  pretrained_path_A: 
+    - ${paths.log_dir}/cyclegan_resnet/runs/checkpoints/best.ckpt
+    - "gen_A"
+  pretrained_path_B: 
+    - ${paths.log_dir}/cyclegan_resnet/runs/checkpoints/best.ckpt
+    - "gen_B"
+lr_C: 1e-3
+lr_G: 2e-4
+lr_D: 2e-4
+epochs_gan: 40
+wd_C: 0.01
+wd_gan: 0.05
+optimizer:
+  _target_: torch.optim.AdamW
+  _partial_: true
+  betas: [0.9, 0.999]
+  eps: 1e-08
+  amsgrad: False
+scheduler_C:
+  _target_: cosine_annealing_warmup.CosineAnnealingWarmupRestarts
+  _partial_: True
+  warmup_steps: 20
+  first_cycle_steps: 80
+  max_lr: ${model.lr_C}
+  min_lr: 1e-6
+scheduler_gan:
+  _target_: torch.optim.lr_scheduler.CosineAnnealingLR
+  _partial_: true
+  T_max: ${model.epochs_gan}
+  eta_min: 1e-6
+  last_epoch: -1
+  verbose: true
+compile: True

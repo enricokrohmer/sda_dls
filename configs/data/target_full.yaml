@@ -1,0 +1,51 @@
+_target_: fccgan.data.data_loader.BaseDataModule
+train_set:
+  _target_: fccgan.data.image_folder.SingleDomainImageFolder
+  root: ${paths.data_dir}/target_full/train
+  labels_path: '${paths.data_dir}/labels.json'
+  transform_list:
+    - _target_: torchvision.transforms.ToTensor
+    - _target_: torchvision.transforms.v2.RandomResizedCrop
+      size: 224
+      scale: [0.7, 1.0]
+      antialias: true
+    - _target_: torchvision.transforms.v2.RandomHorizontalFlip
+    - _target_: torchvision.transforms.v2.RandAugment
+    - _target_: torchvision.transforms.v2.RandomErasing
+    - _target_: torchvision.transforms.v2.Normalize
+      mean: [0.5, 0.5, 0.5]
+      std: [0.5, 0.5, 0.5]
+batch_size_train: 32
+num_workers_train: 4
+val_set:
+  _target_: fccgan.data.image_folder.SingleDomainImageFolder
+  root: '${paths.data_dir}/target_full/val'
+  labels_path: '${paths.data_dir}/labels.json'
+  transform_list:
+    - _target_: torchvision.transforms.ToTensor
+    - _target_: torchvision.transforms.v2.Resize
+      size: 256
+      antialias: true
+    - _target_: torchvision.transforms.v2.CenterCrop
+      size: 224
+    - _target_: torchvision.transforms.v2.Normalize
+      mean: [0.5, 0.5, 0.5]
+      std: [0.5, 0.5, 0.5]
+batch_size_val: 128
+num_workers_val: 4
+test_set:
+  _target_: fccgan.data.image_folder.SingleDomainImageFolder
+  root: '${paths.data_dir}/target_full/test'
+  labels_path: '${paths.data_dir}/labels.json'
+  transform_list:
+    - _target_: torchvision.transforms.ToTensor
+    - _target_: torchvision.transforms.v2.Resize
+      size: 256
+      antialias: true
+    - _target_: torchvision.transforms.v2.CenterCrop
+      size: 224
+    - _target_: torchvision.transforms.v2.Normalize
+      mean: [0.5, 0.5, 0.5]
+      std: [0.5, 0.5, 0.5]
+batch_size_test: 128
+num_workers_test: 4

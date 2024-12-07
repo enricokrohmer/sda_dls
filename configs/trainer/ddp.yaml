@@ -1,0 +1,6 @@
+defaults:
+  - default
+
+strategy: ddp
+devices: ???
+num_nodes: 1
