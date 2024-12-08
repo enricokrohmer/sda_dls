@@ -10,34 +10,33 @@ from .utils import get_all_img_paths, LabelDict
 
 
 class SingleDomainImageFolder(Dataset):
-    
     def __init__(
         self,
-        root : str,
-        labels_path : Optional[str] = None,
-        transform_list : List[torch.nn.Module] = [],
+        root: str,
+        labels_path: Optional[str] = None,
+        transform_list: List[torch.nn.Module] = [],
     ):
         super().__init__()
         self.root = root
         self.transforms = Compose(transform_list) if transform_list else None
         self.paths = get_all_img_paths(root)
-        
+
         self.labels = LabelDict(labels_path) if labels_path else None
-        
-    def _img_path_to_label(self, path : str) -> torch.Tensor:
+
+    def _img_path_to_label(self, path: str) -> torch.Tensor:
         normalized = os.path.normpath(path)
         parts = normalized.split(os.sep)
         class_name = parts[-2]
-        
+
         return self.labels(class_name)
-    
+
     def __len__(self) -> int:
         return len(self.paths)
-    
-    def __getitem__(self, index : int):
+
+    def __getitem__(self, index: int):
         path = self.paths[index % len(self.paths)]
-        img = Image.open(path).convert('RGB')
-        
+        img = Image.open(path).convert("RGB")
+
         img = self.transforms(img) if self.transforms else img
 
         if self.labels:
@@ -45,34 +44,33 @@ class SingleDomainImageFolder(Dataset):
             return img, label
 
         return img
-        
+
 
 class TwoDomainImageFolder(Dataset):
-    
     def __init__(
         self,
-        root_A : str,
-        root_B : str,
-        labels_path : Optional[str] = None,
-        use_domain_labels : bool = False,
-        transform_list : List[torch.nn.Module] = [],
+        root_A: str,
+        root_B: str,
+        labels_path: Optional[str] = None,
+        use_domain_labels: bool = False,
+        transform_list: List[torch.nn.Module] = [],
     ):
         super().__init__()
         self.img_folder_A = SingleDomainImageFolder(root_A, labels_path, transform_list)
         self.img_folder_B = SingleDomainImageFolder(root_B, labels_path, transform_list)
-        
+
         self.use_domain_labels = use_domain_labels
         self.get_labels = labels_path is not None
         self.len_A = len(self.img_folder_A)
         self.len_B = len(self.img_folder_B)
-        
+
     def __len__(self) -> int:
         return self.len_A + self.len_B
-    
-    def __getitem__(self, index : int) -> torch.Tensor | Tuple[torch.Tensor, ...]:
+
+    def __getitem__(self, index: int) -> torch.Tensor | Tuple[torch.Tensor, ...]:
         is_domain_A = index < self.len_A
         dataset = self.img_folder_A if is_domain_A else self.img_folder_B
-        
+
         outputs = dataset[index % len(dataset)]
 
         if self.use_domain_labels:
@@ -85,35 +83,30 @@ class TwoDomainImageFolder(Dataset):
 
 
 class UnpairedImageFolder(Dataset):
-    
     def __init__(
         self,
-        root_A : str,
-        root_B : str,
-        labels_path : str = None,
-        transform_list : List[torch.nn.Module] = [],
+        root_A: str,
+        root_B: str,
+        labels_path: str = None,
+        transform_list: List[torch.nn.Module] = [],
     ):
         super().__init__()
 
         self.img_folder_A = SingleDomainImageFolder(
-            root_A,
-            labels_path=labels_path, 
-            transform_list=transform_list
+            root_A, labels_path=labels_path, transform_list=transform_list
         )
         self.img_folder_B = SingleDomainImageFolder(
-            root_B, 
-            labels_path=labels_path,
-            transform_list=transform_list
+            root_B, labels_path=labels_path, transform_list=transform_list
         )
-        
+
         self.use_labels = labels_path is not None
         self.len_A = len(self.img_folder_A)
         self.len_B = len(self.img_folder_B)
-            
+
     def __len__(self) -> int:
         return max(self.len_A, self.len_B)
-    
-    def __getitem__(self, index : int) -> Tuple[torch.Tensor, torch.Tensor]:
+
+    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
         if self.use_labels:
             img_A, label_A = self.img_folder_A[index % self.len_A]
             img_B, label_B = self.img_folder_B[index % self.len_B]
@@ -122,8 +115,3 @@ class UnpairedImageFolder(Dataset):
             img_A = self.img_folder_A[index % self.len_A]
             img_B = self.img_folder_B[index % self.len_B]
             return img_A, img_B
-    
-
-
-        
-        

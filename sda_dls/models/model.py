@@ -6,8 +6,8 @@ from .strategies.classifier_strategies import ClassifierStrategy
 from .strategies.gan_aided_strategies import TwoStepStrategy
 from .strategies.cyclegan_strategies import AbstractCycleGanStrategy
 
-class Classifier(LightningModule):
 
+class Classifier(LightningModule):
     def __init__(
         self,
         strategy: ClassifierStrategy,
@@ -18,21 +18,21 @@ class Classifier(LightningModule):
     ):
         super().__init__()
         self.save_hyperparameters(ignore=["strategy"])
-        
+
         self.strategy = strategy
         strategy.attach_pl_module(self)
 
     def setup(self, stage: str):
         if self.hparams.compile:
             self.strategy.compile()
-    
+
     def training_step(self, batch, *args, **kwargs) -> STEP_OUTPUT:
         self.strategy._forward_train(batch)
         return self.strategy.get_loss()
 
     def on_train_batch_end(self, *args, **kwargs) -> None:
         self.strategy._update_ema()
-        
+
     def validation_step(self, batch, *args, **kwargs) -> Any:
         return self.strategy._forward_eval(batch)
 
@@ -55,12 +55,11 @@ class Classifier(LightningModule):
         weights = self.strategy.get_weights()
         optimizer = self.hparams.optimizer(params=weights)
         scheduler = self.hparams.scheduler(optimizer)
-        
+
         return [optimizer], [scheduler]
 
 
 class TwoStepClassifier(LightningModule):
-
     def __init__(
         self,
         task_strategy: TwoStepStrategy,
@@ -98,7 +97,7 @@ class TwoStepClassifier(LightningModule):
         if self.current_epoch == self.hparams.epochs_gan:
             self.cgan_strategy.cleanup()
             self.task_strategy.attach_gan(self.cgan_strategy)
-            
+
     def training_step(self, batch, *args, **kwargs) -> STEP_OUTPUT:
         optimizer_C, optimizer_G, optimizer_D = self.optimizers()
 
@@ -126,7 +125,7 @@ class TwoStepClassifier(LightningModule):
             self.manual_backward(loss)
             optimizer_C.step()
             self.untoggle_optimizer(optimizer_C)
-            
+
     def on_train_batch_end(self, *args, **kwargs) -> None:
         if self.current_epoch < self.hparams.epochs_gan:
             self.cgan_strategy._update_ema()
@@ -158,16 +157,16 @@ class TwoStepClassifier(LightningModule):
 
     def on_test_epoch_end(self):
         self.task_strategy.compute_metrics(val=False)
-        
+
     def predict_step(self, batch, *args: Any, **kwargs: Any) -> Any:
         return self.cgan_strategy._forward_predict(batch)
-    
+
     def get_imgs(self):
         if self.current_epoch < self.hparams.epochs_gan:
             return self.cgan_strategy.imgs
         else:
             return dict()
-    
+
     def configure_optimizers(self):
         weights_G, weights_D = self.cgan_strategy.get_weights()
         weights_C = self.task_strategy.get_weights()
@@ -176,20 +175,29 @@ class TwoStepClassifier(LightningModule):
         lr_G = self.hparams.lr_G
         lr_D = self.hparams.lr_D
 
-        optimizer_C = self.hparams.optimizer(params=weights_C, lr=lr_C, weight_decay=self.hparams.wd_C)
-        optimizer_G = self.hparams.optimizer(params=weights_G, lr=lr_G, weight_decay=self.hparams.wd_gan)
-        optimizer_D = self.hparams.optimizer(params=weights_D, lr=lr_D, weight_decay=self.hparams.wd_gan)
+        optimizer_C = self.hparams.optimizer(
+            params=weights_C, lr=lr_C, weight_decay=self.hparams.wd_C
+        )
+        optimizer_G = self.hparams.optimizer(
+            params=weights_G, lr=lr_G, weight_decay=self.hparams.wd_gan
+        )
+        optimizer_D = self.hparams.optimizer(
+            params=weights_D, lr=lr_D, weight_decay=self.hparams.wd_gan
+        )
 
         scheduler_C = self.hparams.scheduler_C(optimizer_C)
         scheduler_G = self.hparams.scheduler_gan(optimizer_G)
         scheduler_D = self.hparams.scheduler_gan(optimizer_D)
 
-        return [optimizer_C, optimizer_G, optimizer_D], [scheduler_C, scheduler_G, scheduler_D]
-    
+        return [optimizer_C, optimizer_G, optimizer_D], [
+            scheduler_C,
+            scheduler_G,
+            scheduler_D,
+        ]
+
     @property
     def imgs(self):
         if self.current_epoch < self.hparams.epochs_gan:
             return self.cgan_strategy.imgs
         else:
             return dict()
-    

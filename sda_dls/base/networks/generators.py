@@ -1,7 +1,7 @@
 # LICENSE
 # File extracted from
 # https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix
-# Please see `sda_dls/base/LICENSE` for copyright 
+# Please see `sda_dls/base/LICENSE` for copyright
 
 import functools
 import torch.nn as nn
@@ -10,8 +10,8 @@ from sda_dls.base.torch.layers.residual_block import ResnetBlock
 from sda_dls.base.torch.layers.skip_connection_block import UnetSkipConnectionBlock
 from sda_dls.base.torch.select import get_norm_layer_fn
 
-class ResnetGenerator(nn.Module):
 
+class ResnetGenerator(nn.Module):
     def __init__(
         self,
         input_nc: int,
@@ -105,7 +105,6 @@ class ResnetGenerator(nn.Module):
 
 
 class UnetGenerator(nn.Module):
-
     def __init__(
         self, input_nc, output_nc, num_downs, ngf=64, norm="instance", use_dropout=False
     ):

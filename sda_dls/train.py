@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import hydra
 import lightning as L
@@ -18,6 +18,7 @@ from sda_dls.utils import (
 
 log = RankedLogger(__name__, rank_zero_only=True)
 
+
 @task_wrapper
 def train(cfg: DictConfig) -> Dict[str, Any]:
     """Trains the model. Can additionally evaluate on a testset, using best weights obtained during
@@ -34,7 +35,9 @@ def train(cfg: DictConfig) -> Dict[str, Any]:
         L.seed_everything(cfg.seed, workers=True)
 
     log.info(f"Instantiating datamodule <{cfg.data._target_}>")
-    datamodule: LightningDataModule = hydra.utils.instantiate(cfg.data, _convert_="partial")
+    datamodule: LightningDataModule = hydra.utils.instantiate(
+        cfg.data, _convert_="partial"
+    )
 
     log.info(f"Instantiating model <{cfg.model._target_}>")
     model: LightningModule = hydra.utils.instantiate(cfg.model)
@@ -46,7 +49,9 @@ def train(cfg: DictConfig) -> Dict[str, Any]:
     logger: List[Logger] = instantiate_loggers(cfg.get("logger"))
 
     log.info(f"Instantiating trainer <{cfg.trainer._target_}>")
-    trainer: Trainer = hydra.utils.instantiate(cfg.trainer, callbacks=callbacks, logger=logger)
+    trainer: Trainer = hydra.utils.instantiate(
+        cfg.trainer, callbacks=callbacks, logger=logger
+    )
 
     object_dict = {
         "cfg": cfg,
@@ -63,7 +68,7 @@ def train(cfg: DictConfig) -> Dict[str, Any]:
 
     train = cfg.get("train")
     ckpt_path = cfg.get("ckpt_path")
-    
+
     if train:
         log.info("Starting training!")
         trainer.fit(model=model, datamodule=datamodule, ckpt_path=ckpt_path)
@@ -101,4 +106,3 @@ def main(cfg: DictConfig) -> Optional[float]:
 
 if __name__ == "__main__":
     main()
-
