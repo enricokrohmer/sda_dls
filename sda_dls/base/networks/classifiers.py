@@ -124,18 +124,9 @@ def init_classifier(
     weight_init: Optional[callable] = None,
     stages_to_freeze: int = 0,
     ckpt: Tuple[str, str] | None = None,
-    load_backbone_only: bool = False,
 ) -> ClassifierNetwork:
     if ckpt is not None:
-        if load_backbone_only:
-            head = classifier.head
-            classifier.head = None
-
         module_weights_from_pl_ckpt(classifier, ckpt)
-
-        if load_backbone_only:
-            classifier.head = head
-
     elif weight_init is not None:
         module = classifier.head if classifier.is_pretrained else classifier
         init_weights(module, weight_init)

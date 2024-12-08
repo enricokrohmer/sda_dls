@@ -2,8 +2,8 @@ _target_: sda_dls.data.data_loader.TwoStageDataModule
 switch_epoch: ${model.epochs_gan}
 first_train_set:
   _target_: sda_dls.data.image_folder.UnpairedImageFolder
-  root_A: ${paths.data_dir}/source/train
-  root_B: ${paths.data_dir}/target_partial_split/train
+  root_A: '${paths.data_dir}/source/train'
+  root_B: '${paths.data_dir}/target/train'
   transform_list:
     - _target_: torchvision.transforms.ToTensor
     - _target_: torchvision.transforms.v2.RandomResizedCrop
@@ -22,8 +22,8 @@ first_train_set:
       - 0.5
 snd_train_set:
   _target_: sda_dls.data.image_folder.UnpairedImageFolder
-  root_A: ${paths.data_dir}/source/train
-  root_B: ${paths.data_dir}/target_partial
+  root_A: '${paths.data_dir}/source/train'
+  root_B: '${paths.data_dir}/target/train'
   labels_path: ${paths.data_dir}/labels.json
   transform_list:
     - _target_: torchvision.transforms.ToTensor
@@ -34,8 +34,8 @@ snd_train_set:
     - _target_: torchvision.transforms.v2.Normalize
       mean: [0.5, 0.5, 0.5]
       std: [0.5, 0.5, 0.5]
-batch_size_train_first: 8
-batch_size_train_snd: 16
+batch_size_train_first: 4
+batch_size_train_snd: 32
 num_workers_train: 4
 val_set:
   _target_: sda_dls.data.image_folder.SingleDomainImageFolder

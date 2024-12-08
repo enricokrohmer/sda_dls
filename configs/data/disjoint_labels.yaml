@@ -2,7 +2,7 @@ _target_: sda_dls.data.data_loader.BaseDataModule
 train_set:
   _target_: sda_dls.data.image_folder.UnpairedImageFolder
   root_A: ${paths.data_dir}/source/train
-  root_B: ${paths.data_dir}/target_partial
+  root_B: ${paths.data_dir}/target/train
   labels_path: '${paths.data_dir}/labels.json'
   transform_list:
     - _target_: torchvision.transforms.ToTensor
@@ -16,7 +16,7 @@ train_set:
     - _target_: torchvision.transforms.v2.Normalize
       mean: [0.5, 0.5, 0.5]
       std: [0.5, 0.5, 0.5]
-batch_size_train: 16
+batch_size_train: 32
 num_workers_train: 4
 val_set:
   _target_: sda_dls.data.image_folder.SingleDomainImageFolder

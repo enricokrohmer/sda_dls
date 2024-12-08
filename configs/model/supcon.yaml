@@ -55,9 +55,6 @@ task_strategy:
   nc_src: 21
   avg_momentum: 0.9999
   one_sided: True
-  pretrained_path:
-    - ${paths.log_dir}/to_pt/runs/checkpoints/best.ckpt
-    - avg_C
 cgan_strategy:
   _target_: sda_dls.models.strategies.cyclegan_strategies.CycleGanStrategy
   generator:
@@ -87,11 +84,9 @@ cgan_strategy:
     _target_: sda_dls.base.torch.losses.FeatureConsistencyLoss
     lambda_fc: 10
     network: ${model.task_strategy.classifier}
-    pretrained_path:
-      - ${paths.log_dir}/extractor/runs/checkpoints/best.ckpt
-      - avg_C
+    pretrained_path: ???
     margin: 0.5
-lr_C: 1e-3
+lr_C: 2e-4
 lr_G: 2e-4
 lr_D: 2e-4
 epochs_gan: 60

@@ -51,7 +51,6 @@ class AbstractClassifierStrategy(Strategy):
         val_metrics: MetricCollection,
         test_metrics: MetricCollection,
         pretrained_path: Optional[Tuple[str, str]] = None,
-        load_backbone_only: bool = False,
         stages_to_freeze: int = 0,
         nc_src: Optional[int] = None,
         best_metric_key: Optional[str] = None,
@@ -64,7 +63,6 @@ class AbstractClassifierStrategy(Strategy):
             weight_init,
             stages_to_freeze,
             pretrained_path,
-            load_backbone_only,
         )
         self.criterion_task = nn.CrossEntropyLoss(label_smoothing=label_smoothing)
 
@@ -163,7 +161,6 @@ class TwoDomainClassifierStrategy(AbstractClassifierStrategy):
         val_metrics: MetricCollection,
         test_metrics: MetricCollection,
         pretrained_path: Optional[Tuple[str, str]] = None,
-        load_backbone_only: bool = False,
         stages_to_freeze: int = 0,
         nc_src: Optional[int] = None,
         best_metric_key: Optional[str] = None,
@@ -177,7 +174,6 @@ class TwoDomainClassifierStrategy(AbstractClassifierStrategy):
             val_metrics=val_metrics,
             test_metrics=test_metrics,
             pretrained_path=pretrained_path,
-            load_backbone_only=load_backbone_only,
             stages_to_freeze=stages_to_freeze,
             nc_src=nc_src,
             best_metric_key=best_metric_key,
@@ -216,7 +212,6 @@ class DANNStrategy(AbstractClassifierStrategy):
         best_metric_key: Optional[str] = None,
         maximize_best_metric: Optional[bool] = True,
         avg_momentum: float = 0,
-        load_backbone_only: bool = False,
     ):
         super().__init__(
             classifier=classifier,
@@ -230,7 +225,6 @@ class DANNStrategy(AbstractClassifierStrategy):
             best_metric_key=best_metric_key,
             maximize_best_metric=maximize_best_metric,
             avg_momentum=avg_momentum,
-            load_backbone_only=load_backbone_only,
         )
         self.disc = discriminator
         init_weights(self.disc, weight_init)

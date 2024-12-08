@@ -1,7 +1,7 @@
 _target_: sda_dls.data.data_loader.BaseDataModule
 train_set:
   _target_: sda_dls.data.image_folder.SingleDomainImageFolder
-  root: ${paths.data_dir}/target_full/train
+  root: '${paths.data_dir}/target_full/train'
   labels_path: '${paths.data_dir}/labels.json'
   transform_list:
     - _target_: torchvision.transforms.ToTensor
@@ -19,7 +19,7 @@ batch_size_train: 32
 num_workers_train: 4
 val_set:
   _target_: sda_dls.data.image_folder.SingleDomainImageFolder
-  root: '${paths.data_dir}/target_full/val'
+  root: '${paths.data_dir}/target_full/val
   labels_path: '${paths.data_dir}/labels.json'
   transform_list:
     - _target_: torchvision.transforms.ToTensor
@@ -35,7 +35,7 @@ batch_size_val: 128
 num_workers_val: 4
 test_set:
   _target_: sda_dls.data.image_folder.SingleDomainImageFolder
-  root: '${paths.data_dir}/target_full/test'
+  root: '${paths.data_dir}/target_full/train'
   labels_path: '${paths.data_dir}/labels.json'
   transform_list:
     - _target_: torchvision.transforms.ToTensor

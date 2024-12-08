@@ -30,7 +30,6 @@ class TwoStepStrategy(AbstractClassifierStrategy):
         best_metric_key: Optional[str] = None,
         maximize_best_metric: Optional[bool] = True,
         avg_momentum: float = 0.0,
-        load_backbone_only: bool = False,
     ):
         super().__init__(
             classifier=classifier,
@@ -44,7 +43,6 @@ class TwoStepStrategy(AbstractClassifierStrategy):
             best_metric_key=best_metric_key,
             maximize_best_metric=maximize_best_metric,
             avg_momentum=avg_momentum,
-            load_backbone_only=load_backbone_only,
         )
         self.transforms = transforms
         self.transforms.requires_grad_(False)
@@ -95,7 +93,6 @@ class SupConDAStrategy(TwoStepStrategy):
         maximize_best_metric: Optional[bool] = True,
         one_sided: bool = True,
         avg_momentum: float = 0.0,
-        load_backbone_only: bool = False,
     ):
         super().__init__(
             classifier=classifier,
@@ -110,7 +107,6 @@ class SupConDAStrategy(TwoStepStrategy):
             best_metric_key=best_metric_key,
             maximize_best_metric=maximize_best_metric,
             avg_momentum=avg_momentum,
-            load_backbone_only=load_backbone_only,
         )
         self.net_P = projection_net
         self.contrastive_loss = criterion_contrastive
@@ -208,7 +204,6 @@ class CycadaDANN(TwoStepStrategy):
         best_metric_key: Optional[str] = None,
         maximize_best_metric: Optional[bool] = True,
         avg_momentum: float = 0.0,
-        load_backbone_only: bool = False,
     ):
         super().__init__(
             classifier=classifier,
@@ -223,7 +218,6 @@ class CycadaDANN(TwoStepStrategy):
             best_metric_key=best_metric_key,
             maximize_best_metric=maximize_best_metric,
             avg_momentum=avg_momentum,
-            load_backbone_only=load_backbone_only,
         )
         self.disc = discriminator
         init_weights(self.disc, weight_init)

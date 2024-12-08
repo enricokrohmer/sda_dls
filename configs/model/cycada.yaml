@@ -13,22 +13,19 @@ task_strategy:
     norm: null
   lambda_disc: 1
   transforms:
-    _target_: kornia.augmentation.container.AugmentationSequential
-    _args_:
-    - _target_: kornia.enhance.Denormalize
-      mean: 0.5
-      std: 0.5
-    - _target_: kornia.augmentation.RandomCrop
-      size:
-      - 224
-      - 224
-    - _target_: kornia.augmentation.auto.RandAugment
-      n: 2
-      m: 14
-    - _target_: kornia.enhance.Normalize
-      mean: 0.5
-      std: 0.5
-    same_on_batch: false
+    _target_: torchvision.transforms.v2.Compose
+    transforms:
+      - _target_: torchvision.transforms.v2.Normalize
+        mean: [-1, -1, -1]
+        std: [2, 2, 2]
+      - _target_: torchvision.transforms.v2.Resize
+        size: 224
+      - _target_: torchvision.transforms.v2.RandomHorizontalFlip
+      - _target_: torchvision.transforms.v2.RandAugment
+      - _target_: torchvision.transforms.v2.RandomErasing
+      - _target_: torchvision.transforms.v2.Normalize
+        mean: [0.5, 0.5, 0.5]
+        std: [0.5, 0.5, 0.5]
   acc_threshold: 0.6
   label_smoothing: 0.1
   weight_init:
@@ -49,12 +46,6 @@ task_strategy:
     prefix: test_
     metrics:
     - _target_: torchmetrics.classification.MulticlassF1Score
-      num_classes: ${model.task_strategy.classifier.num_classes}
-      average: none
-    - _target_: torchmetrics.classification.MulticlassPrecision
-      num_classes: ${model.task_strategy.classifier.num_classes}
-      average: none
-    - _target_: torchmetrics.classification.MulticlassRecall
       num_classes: ${model.task_strategy.classifier.num_classes}
       average: none
   nc_src: 21
