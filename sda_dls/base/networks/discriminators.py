@@ -1,6 +1,6 @@
 # LICENSE
-# All classes extracted from
-#  https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix
+# File extracted from
+# https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix
 # Please see `sda_dls/base/LICENSE` for copyright 
 
 import functools

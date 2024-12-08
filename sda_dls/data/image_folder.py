@@ -1,7 +1,6 @@
 import os
 import torch
 
-
 from typing import List, Tuple, Optional
 from torch.utils.data import Dataset
 from torchvision.transforms.v2 import Compose
@@ -15,7 +14,7 @@ class SingleDomainImageFolder(Dataset):
     def __init__(
         self,
         root : str,
-        labels_path : str = None,
+        labels_path : Optional[str] = None,
         transform_list : List[torch.nn.Module] = [],
     ):
         super().__init__()
@@ -46,32 +45,10 @@ class SingleDomainImageFolder(Dataset):
             return img, label
 
         return img
-    
-    
-class TranslationFolder(Dataset):
-    def __init__(
-        self,
-        root : str,
-        transform_list : List[torch.nn.Module] = [],
-        return_paths : bool = False,
-    ):
-        super().__init__()
-        self.folder = SingleDomainImageFolder(
-            root, 
-            transform_list=transform_list
-        )
-        
-    def __len__(self) -> int:
-        return len(self.folder)
-    
-    def __getitem__(self, index : int) -> Tuple[torch.Tensor, torch.Tensor]:
-        img = self.folder[index]
-        path = self.folder.paths[index]
-        
-        return img, path
         
 
 class TwoDomainImageFolder(Dataset):
+    
     def __init__(
         self,
         root_A : str,

@@ -5,17 +5,13 @@ from abc import abstractmethod
 
 import torch
 from torch import nn
-from kornia.enhance import denormalize
 
 from sda_dls.base.networks.generators import init_generator
 from sda_dls.base.networks.classifiers import init_classifier
-from sda_dls.base.torch.losses import GANLoss, PixelConsistencyLoss, FeatureConsistencyLoss
+from sda_dls.base.torch.losses import GANLoss, FeatureConsistencyLoss
 from sda_dls.base.torch.image_pool import ImagePool
-from sda_dls.base.torch.gradient_penalty import GradientPenalty
 from sda_dls.base.torch.weigth_init import init_weights
 from sda_dls.base.torch.funcs import update_average_model
-from sda_dls.base.torch.queue import FastQueue
-from sda_dls.base.torch.layers.batch_head import BatchHeadWrapper, queued_forward
 
 from .classifier_strategies import Strategy
 
