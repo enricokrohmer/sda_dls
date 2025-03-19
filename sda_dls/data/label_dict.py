@@ -17,6 +17,6 @@ class LabelDict:
         if class_name not in self.label_dict:
             raise ValueError(f"{class_name} not found in label file.")
 
-        index = self.label_dict[class_name] - 1
+        index = self.label_dict[class_name]
         label = torch.tensor(index, dtype=torch.long)
         return label

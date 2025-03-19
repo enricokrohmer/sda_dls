@@ -1,0 +1,8 @@
+defaults:
+  - default
+  - data: extractor.yaml
+  - _self_
+
+experiment_name: 'extractor'
+
+    

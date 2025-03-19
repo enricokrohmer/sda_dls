@@ -9,10 +9,17 @@ defaults:
   - hydra: default.yaml
   - _self_
 
-experiment_name: ???
-train: True
-
 trainer:
   max_epochs: 60
   devices: 0
   check_val_every_n_epochs: 5
+
+data:
+  train_set:
+    root: '${paths.data_dir}/target/train'
+  val_set:
+    root: '${paths.data_dir}/target/val'
+
+experiment_name: 'two_step_backbone'
+
+train: True

@@ -32,12 +32,13 @@ task_strategy:
     _target_: pytorch_metric_learning.losses.SupConLoss
   lambda_contrastive: 0.5
   label_smoothing: 0.1
+  pretrained_path: ???
   weight_init:
     _target_: torch.nn.init.normal_
     _partial_: true
     mean: 0.0
     std: 0.02
-  stages_to_freeze: 2
+  stages_to_freeze: 3
   val_metrics:
     _target_: torchmetrics.MetricCollection
     prefix: 'val_'
