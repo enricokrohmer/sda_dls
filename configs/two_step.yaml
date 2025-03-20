@@ -16,9 +16,9 @@ trainer:
 
 data:
   train_set:
-    root: '${paths.data_dir}/target/train'
+    root: '${paths.data_dir}/target_split/train'
   val_set:
-    root: '${paths.data_dir}/target/val'
+    root: '${paths.data_dir}/target_split/val'
 
 experiment_name: 'two_step_backbone'
 

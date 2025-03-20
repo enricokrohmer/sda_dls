@@ -1,7 +1,10 @@
 ### Supervised Domain Adaptation with Disjoint Label Spaces for Fine-Grained Classification
 ![plot](./assets/spaces.png)
+Domain adaptation scenarios commonly assume that the label spaces of the source and target domains are either equal or share a common set of classes. However, in fine-grained classification settings, it is likely that the common label set is empty. Therefore, we approach a supervised domain adaptation scenario where the label spaces of the source and target domains are available but disjoint during training.
+
 ![plot](./assets/fccgan.png)
-![plot](./assets/supcon.png)
+Our [paper](https://openaccess.thecvf.com/content/ACCV2024W/AWSS/papers/Krohmer_Supervised_Domain_Adaptation_with_Disjoint_Label_Spaces_for_Fine-Grained_Classification_ACCVW_2024_paper.pdf) introduces a novel CycleGAN variant, FCCGAN, which translates source images into target-stylized images that preserve their class-specific features. To further encourage the classifier to learn domain-invariant representations, we pre-train the classifier exclusively on the target domain and then employ supervised contrastive learning on source, target, and target-stylized images.
+
 #### About
 ---
 Official code-base for our paper that was used to generate all results. Code includes our training framework for supervised domain adaptation with disjoint label spaces, including our novel FCCGAN. Additionally, we provide re-implementations of [DANN](https://www.jmlr.org/papers/volume17/15-239/15-239.pdf), [DAN](http://proceedings.mlr.press/v37/long15.pdf) as well as [CyCADA](http://proceedings.mlr.press/v80/hoffman18a/hoffman18a.pdf). 

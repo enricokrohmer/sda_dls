@@ -3,7 +3,7 @@ switch_epoch: ${model.epochs_gan}
 first_train_set:
   _target_: sda_dls.data.image_folder.UnpairedImageFolder
   root_A: '${paths.data_dir}/source/train'
-  root_B: '${paths.data_dir}/target/train'
+  root_B: '${paths.data_dir}/target_split/train'
   transform_list:
     - _target_: torchvision.transforms.ToTensor
     - _target_: torchvision.transforms.v2.RandomResizedCrop
@@ -23,7 +23,7 @@ first_train_set:
 snd_train_set:
   _target_: sda_dls.data.image_folder.UnpairedImageFolder
   root_A: '${paths.data_dir}/source/train'
-  root_B: '${paths.data_dir}/target/train'
+  root_B: '${paths.data_dir}/target_split/val'
   labels_path: ${paths.data_dir}/labels.json
   transform_list:
     - _target_: torchvision.transforms.ToTensor
