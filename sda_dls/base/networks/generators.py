@@ -4,12 +4,15 @@
 # Please see `sda_dls/base/LICENSE` for copyright
 
 import functools
+from typing import Tuple
+
 import torch.nn as nn
 
+from sda_dls.base.torch.funcs import module_weights_from_pl_ckpt
 from sda_dls.base.torch.layers.residual_block import ResnetBlock
 from sda_dls.base.torch.layers.skip_connection_block import UnetSkipConnectionBlock
 from sda_dls.base.torch.select import get_norm_layer_fn
-
+from sda_dls.base.torch.weigth_init import init_weights
 
 class ResnetGenerator(nn.Module):
     def __init__(
@@ -162,3 +165,15 @@ class UnetGenerator(nn.Module):
     def forward(self, input):
         """Standard forward"""
         return self.model(input)
+
+def init_generator(
+    generator: nn.Module,
+    weight_init: callable,
+    pretrained_path: Tuple[str, str] = None,
+):
+    if pretrained_path is not None:
+        module_weights_from_pl_ckpt(generator, pretrained_path)
+    else:
+        init_weights(generator, weight_init)
+
+    return generator
